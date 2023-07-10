@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    networks:
+      mysqlnetwork:
+        ipv4_address: 172.20.0.2
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    networks:
+      mysqlnetwork:
+        ipv4_address: 172.20.0.3
+    environment:
+      PMA_ARBITRARY: 1
+      
+  pythonapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      mysqlnetwork:
+        ipv4_address: 172.20.0.4
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+networks:
+  mysqlnetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
